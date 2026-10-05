@@ -19,6 +19,22 @@ function doGet() {
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
 
+// Public Pages submissions omit Google account cookies and send data only in the body.
+function doPost(event) {
+  let result;
+  try {
+    const data = event && event.postData;
+    if (!data || typeof data.contents !== 'string' || !data.contents.length || data.contents.length > 8192 ||
+        !/^text\/plain(?:;|$)/i.test(String(data.type || '')) || Number(event.contentLength) > 8192) {
+      throw new Error('invalid request');
+    }
+    result = submitWaitlist(JSON.parse(data.contents));
+  } catch (error) {
+    result = {ok: false, code: 'INVALID', message: 'تعذر قراءة طلب التسجيل. راجع الإجابات وأعد المحاولة.'};
+  }
+  return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
+}
+
 // The trailing underscore makes this helper unavailable through google.script.run.
 function setupShantaWaitlist_() {
   const lock = LockService.getScriptLock();
